@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Common Home | Commonhold Conversion Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --brand-blue-light: #75b0d3;
+        --brand-blue-dark: #4c6fa1;
+        --brand-pink: #d94e6d;
+        --brand-text: #333333;
+      }
+      body {
+        font-family: 'Outfit', sans-serif;
+        background-color: #fcfdfe;
+        color: var(--brand-text);
+      }
+      .bg-brand-gradient {
+        background: linear-gradient(135deg, #75b0d3 0%, #4c6fa1 50%, #d94e6d 100%);
+      }
+      .text-brand-pink { color: #d94e6d; }
+      .bg-brand-pink { background-color: #d94e6d; }
+      .border-brand-pink { border-color: #d94e6d; }
+      
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
