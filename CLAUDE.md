@@ -1,77 +1,36 @@
 # CLAUDE.md
 
-## Project Overview
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Common Home** — a collaborative platform for UK leaseholders navigating commonhold conversion. Features a step-by-step roadmap, neighbor engagement tools, and a Google Gemini-powered AI legal advisor.
-
-## Tech Stack
-
-- **React 19** with TypeScript
-- **Vite 6** (dev server on port 3000)
-- **Tailwind CSS** (loaded via CDN in `index.html`)
-- **Recharts** for data visualization
-- **Google Gemini AI** (`@google/genai`) for the AI Advisor
-
-## Project Structure
-
-```
-/
-├── components/
-│   ├── AIAdvisor.tsx      # Gemini-powered chat interface
-│   ├── CommunityHub.tsx   # Neighbor directory and engagement
-│   ├── Dashboard.tsx      # Progress stats, charts, activity feed
-│   ├── Layout.tsx         # Sidebar/header navigation wrapper
-│   └── Roadmap.tsx        # 5-step commonhold conversion guide
-├── App.tsx                # Root component
-├── index.tsx              # React DOM entry point
-├── types.ts               # Shared TypeScript types
-├── vite.config.ts
-└── tsconfig.json
-```
-
-## Development
+## Commands
 
 ```bash
-npm install
-# Add GEMINI_API_KEY to .env.local
-npm run dev        # localhost:3000
-npm run build      # production build → /dist
-npm run preview    # preview production build
+npm run dev      # dev server at localhost:3000
+npm run build    # production build → /dist
+npm run preview  # serve the production build locally
 ```
 
-## Environment Variables
+No test framework is configured.
 
-Set in `.env.local` (never commit this file):
+## Environment
 
+Create `.env.local` with:
 ```
 GEMINI_API_KEY=your_key_here
 ```
 
-Vite exposes this as `process.env.API_KEY` and `process.env.GEMINI_API_KEY` in the frontend.
+`vite.config.ts` injects this as both `process.env.API_KEY` and `process.env.GEMINI_API_KEY` at build time via `define`. The app reads `process.env.API_KEY` in `AIAdvisor.tsx`.
 
-## TypeScript
+## Architecture
 
-- Strict mode enabled
-- Path alias: `@/` maps to the project root
-- Target: ES2022, module resolution: bundler
+This is a **fully client-side, single-page React app** with no backend. All state lives in `App.tsx` and is passed down as props — there is no global state library.
 
-## Design System
+**Navigation** is tab-based (`'dashboard' | 'roadmap' | 'community' | 'advisor'`), managed by `activeTab` state in `App.tsx`. `Layout.tsx` renders the sidebar/header and receives `setActiveTab` to drive navigation.
 
-- **Font**: Outfit (Google Fonts)
-- **Brand colors** (CSS variables in `index.html`):
-  - Light Blue: `#75b0d3`
-  - Dark Blue: `#4c6fa1`
-  - Pink: `#d94e6d`
-- **Border radius**: `2rem` throughout
-- Tailwind utility classes for layout and spacing
+**Data** is entirely hardcoded mock data defined in `App.tsx` (`MOCK_NEIGHBORS`, `buildingFacts`). The `Neighbor[]` array is the only mutable state — `CommunityHub` receives `setNeighbors` to update it. There is no API, database, or persistence layer.
 
-## Testing
+**AI integration** (`AIAdvisor.tsx`) instantiates `GoogleGenAI` directly on each message send (no singleton). It uses model `gemini-3-flash-preview` with a hardcoded system prompt scoped to UK commonhold legal guidance. The conversation history is maintained in local component state and passed as `contents` on every request.
 
-No test framework is configured. There are no test files in this project.
+**Styling** uses Tailwind CSS loaded from CDN in `index.html` — do not add it as an npm dependency. Brand CSS variables (`--color-brand-*`) and the `bg-brand-gradient` utility are defined in a `<style>` block in `index.html`, not in any config file. The `@/` path alias resolves to the repo root.
 
-## Key Notes
-
-- Tailwind is loaded from CDN — do not install it as an npm package
-- The AI Advisor uses a specific system prompt in `AIAdvisor.tsx` scoped to UK commonhold legal guidance — preserve its tone and scope when modifying
-- No backend; this is a fully client-side app
-- Dev container is configured in `.devcontainer/` for consistent environments
+**Types** in `types.ts` are the source of truth for data shapes (`Neighbor`, `RoadmapStep`, `BuildingStats`, `BuildingFacts`, `ProjectStatus`).
