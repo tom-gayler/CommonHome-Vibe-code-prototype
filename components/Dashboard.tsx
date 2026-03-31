@@ -1,23 +1,38 @@
-
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { BuildingStats, Neighbor, BuildingFacts } from '../types';
+import { BuildingStats, Leaseholder, Building, ActivityLogEntry } from '../types';
 
 interface DashboardProps {
   stats: BuildingStats;
-  neighbors: Neighbor[];
-  buildingFacts: BuildingFacts;
+  leaseholders: Leaseholder[];
+  building: Building;
+  activityLog: ActivityLogEntry[];
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ stats, neighbors, buildingFacts }) => {
+function formatFees(pence: number | null): string {
+  if (pence === null) return '—';
+  return `£${(pence / 100).toLocaleString('en-GB')}`;
+}
+
+function timeAgo(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ stats, leaseholders, building, activityLog }) => {
   const percentage = Math.round((stats.signedUnits / stats.totalUnits) * 100);
   const targetPercentage = Math.round((stats.targetUnits / stats.totalUnits) * 100);
+  const missingContacts = leaseholders.filter(l => l.contact_status === 'missing');
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
       {/* Main Column */}
       <div className="lg:col-span-2 space-y-10">
-        
+
         {/* Progress Card */}
         <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
           <div className="flex justify-between items-end mb-8">
@@ -27,13 +42,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, neighbors, building
             </div>
             <span className="text-3xl font-black text-[#d94e6d]">{percentage}%</span>
           </div>
-          
+
           <div className="relative h-5 bg-slate-50 rounded-full overflow-hidden mb-10 shadow-inner">
-            <div 
+            <div
               className="absolute top-0 left-0 h-full bg-brand-gradient transition-all duration-1500 ease-out rounded-full"
               style={{ width: `${percentage}%` }}
             />
-            <div 
+            <div
               className="absolute top-0 h-full border-r-2 border-dashed border-slate-300 flex items-center justify-center"
               style={{ left: `${targetPercentage}%` }}
             >
@@ -57,7 +72,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, neighbors, building
           </div>
         </div>
 
-        {/* Building Facts Card (New User Stories) */}
+        {/* Building Facts Card */}
         <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-bold text-[#333333] flex items-center gap-2">
@@ -69,20 +84,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, neighbors, building
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-5 bg-slate-50 rounded-2xl">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Current Freeholder</p>
-              <p className="font-bold text-[#333333]">{buildingFacts.freeholderName}</p>
+              <p className="font-bold text-[#333333]">{building.freeholder_name ?? '—'}</p>
             </div>
             <div className="p-5 bg-slate-50 rounded-2xl">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Managing Agent</p>
-              <p className="font-bold text-[#333333]">{buildingFacts.managingAgent}</p>
+              <p className="font-bold text-[#333333]">{building.managing_agent ?? '—'}</p>
             </div>
             <div className="p-5 bg-slate-50 rounded-2xl">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Annual Service Charge</p>
-              <p className="font-bold text-[#333333]">{buildingFacts.annualFees}</p>
+              <p className="font-bold text-[#333333]">{formatFees(building.annual_fees_pence)}</p>
             </div>
           </div>
         </div>
 
-        {/* Resident vs Investor Split */}
+        {/* Ownership Mix + Activity */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
             <h3 className="font-bold text-[#333333] mb-6 flex items-center gap-2">
@@ -95,8 +110,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, neighbors, building
                   <PieChart>
                     <Pie
                       data={[
-                        { name: 'Residents', value: neighbors.filter(n => n.isResident).length },
-                        { name: 'Off-site', value: neighbors.filter(n => !n.isResident).length },
+                        { name: 'Residents', value: leaseholders.filter(l => l.is_resident).length },
+                        { name: 'Off-site', value: leaseholders.filter(l => !l.is_resident).length },
                       ]}
                       innerRadius={35}
                       outerRadius={50}
@@ -111,14 +126,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, neighbors, building
                 </ResponsiveContainer>
               </div>
               <div className="space-y-4">
-                <div className="group">
+                <div>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-3 h-3 rounded-full bg-[#4c6fa1]" />
                     <span className="text-sm font-bold text-slate-700">Residents</span>
                   </div>
                   <p className="text-xs text-slate-500">Owners living in the block</p>
                 </div>
-                <div className="group">
+                <div>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-3 h-3 rounded-full bg-slate-200" />
                     <span className="text-sm font-bold text-slate-700">Investors</span>
@@ -135,34 +150,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, neighbors, building
               Recent Activity
             </h3>
             <div className="space-y-5">
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-green-50 flex items-center justify-center text-green-600 text-sm border border-green-100 shadow-sm shrink-0">✓</div>
-                <div>
-                  <p className="text-sm font-bold text-slate-800">Flat 4 signed the petition</p>
-                  <p className="text-[11px] text-slate-400 font-medium">2 hours ago</p>
+              {activityLog.length === 0 && (
+                <p className="text-sm text-slate-400 font-medium">No activity yet.</p>
+              )}
+              {activityLog.map(entry => (
+                <div key={entry.id} className="flex gap-4">
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm border shadow-sm shrink-0 ${
+                    entry.activity_type === 'success'
+                      ? 'bg-green-50 text-green-600 border-green-100'
+                      : 'bg-[#75b0d3]/10 text-[#4c6fa1] border-[#75b0d3]/20'
+                  }`}>
+                    {entry.activity_type === 'success' ? '✓' : '👋'}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">{entry.description}</p>
+                    <p className="text-[11px] text-slate-400 font-medium">{timeAgo(entry.created_at)}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-[#75b0d3]/10 flex items-center justify-center text-[#4c6fa1] text-sm border border-[#75b0d3]/20 shadow-sm shrink-0">👋</div>
-                <div>
-                  <p className="text-sm font-bold text-slate-800">You added Flat 5 contact</p>
-                  <p className="text-[11px] text-slate-400 font-medium">1 day ago</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Side column: Immediate Tasks */}
+      {/* Side column: Priority Actions */}
       <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
         <h3 className="font-extrabold text-xl text-[#333333] mb-8">Priority Actions</h3>
         <div className="space-y-8 relative">
           <div className="absolute top-0 bottom-0 left-[11px] w-0.5 bg-slate-50"></div>
-          
+
           <div className="relative pl-10">
             <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-brand-gradient flex items-center justify-center shadow-lg shadow-[#4c6fa1]/30">
-               <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
             </div>
             <h4 className="font-bold text-sm text-[#333333]">Establish Facts</h4>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">Identify freeholder, agents, and confirm service charge costs.</p>
@@ -170,11 +189,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, neighbors, building
           </div>
 
           <div className="relative pl-10">
-             <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-white border-2 border-[#4c6fa1] flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-[#4c6fa1]"></div>
-             </div>
+            <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-white border-2 border-[#4c6fa1] flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-[#4c6fa1]"></div>
+            </div>
             <h4 className="font-bold text-sm text-[#333333]">Find Missing Contacts</h4>
-            <p className="text-xs text-slate-500 mt-2 leading-relaxed">We need contact details for 2 non-resident owners to proceed.</p>
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+              Need contact details for {missingContacts.length} owner{missingContacts.length !== 1 ? 's' : ''}.
+            </p>
           </div>
 
           <div className="relative pl-10 opacity-50">
@@ -184,16 +205,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, neighbors, building
           </div>
         </div>
 
-        <div className="mt-12 pt-10 border-t border-slate-50">
-          <div className="bg-[#d94e6d] p-6 rounded-3xl shadow-xl shadow-[#d94e6d]/20 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 text-4xl opacity-10 group-hover:scale-125 transition-transform duration-500">⚠️</div>
-            <p className="text-white/70 text-[10px] font-black mb-1 uppercase tracking-[0.2em]">Blocker</p>
-            <p className="text-sm text-white font-bold leading-relaxed mb-5">Missing address for Flat 6 (Non-resident).</p>
-            <button className="w-full py-3 bg-white text-[#d94e6d] text-xs font-black rounded-2xl hover:bg-slate-50 transition-all hover:shadow-lg active:scale-95">
-              Find Owner
-            </button>
+        {missingContacts.length > 0 && (
+          <div className="mt-12 pt-10 border-t border-slate-50">
+            <div className="bg-[#d94e6d] p-6 rounded-3xl shadow-xl shadow-[#d94e6d]/20 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 text-4xl opacity-10 group-hover:scale-125 transition-transform duration-500">⚠️</div>
+              <p className="text-white/70 text-[10px] font-black mb-1 uppercase tracking-[0.2em]">Blocker</p>
+              <p className="text-sm text-white font-bold leading-relaxed mb-5">
+                Missing address for {missingContacts.map(l => l.unit_label).join(', ')}.
+              </p>
+              <button className="w-full py-3 bg-white text-[#d94e6d] text-xs font-black rounded-2xl hover:bg-slate-50 transition-all hover:shadow-lg active:scale-95">
+                Find Owner
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

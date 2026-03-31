@@ -1,16 +1,12 @@
-
 import React from 'react';
 import { RoadmapStep } from '../types';
 
-const STEPS: RoadmapStep[] = [
-  { id: 1, title: "Establish the Facts", description: "Identify the freeholder, managing agent, and collect info on current fees (service charges).", isCompleted: true, estimatedTime: "1 week", riskLevel: "Low" },
-  { id: 2, title: "Build the Team", description: "Find contact details for all owners, specifically identifying non-resident investors.", isCompleted: false, estimatedTime: "2-3 weeks", riskLevel: "Medium" },
-  { id: 3, title: "Make the Case", description: "Communicate benefits of Right to Manage/Commonhold to all owners to build consensus.", isCompleted: false, estimatedTime: "1 month", riskLevel: "Low" },
-  { id: 4, title: "Get Commitment", description: "Secure formal agreement (signatures) from at least 50% of owners.", isCompleted: false, estimatedTime: "2-3 months", riskLevel: "High" },
-  { id: 5, title: "Legal Process", description: "Serve formal notices to the freeholder and form the RTM/Commonhold company.", isCompleted: false, estimatedTime: "3-6 months", riskLevel: "Medium" },
-];
+interface RoadmapProps {
+  steps: RoadmapStep[];
+  onCompleteStep: (id: string) => Promise<void>;
+}
 
-export const Roadmap: React.FC = () => {
+export const Roadmap: React.FC<RoadmapProps> = ({ steps, onCompleteStep }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="bg-brand-gradient text-white p-10 rounded-[2.5rem] shadow-2xl shadow-[#4c6fa1]/30 relative overflow-hidden">
@@ -22,44 +18,47 @@ export const Roadmap: React.FC = () => {
       </div>
 
       <div className="space-y-6">
-        {STEPS.map((step) => (
-          <div 
-            key={step.id} 
+        {steps.map((step) => (
+          <div
+            key={step.id}
             className={`group bg-white p-8 rounded-3xl border transition-all duration-300 ${
-              step.isCompleted 
-                ? 'border-[#75b0d3]/20 bg-[#f8fbfe]' 
+              step.is_completed
+                ? 'border-[#75b0d3]/20 bg-[#f8fbfe]'
                 : 'border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1'
             }`}
           >
             <div className="flex items-start gap-6">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 shadow-sm ${
-                step.isCompleted ? 'bg-brand-gradient text-white' : 'bg-slate-50 text-slate-300'
+                step.is_completed ? 'bg-brand-gradient text-white' : 'bg-slate-50 text-slate-300'
               }`}>
-                {step.isCompleted ? '✓' : step.id}
+                {step.is_completed ? '✓' : step.display_order}
               </div>
               <div className="flex-1">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                  <h4 className={`font-black text-lg ${step.isCompleted ? 'text-[#4c6fa1]' : 'text-[#333333]'}`}>
+                  <h4 className={`font-black text-lg ${step.is_completed ? 'text-[#4c6fa1]' : 'text-[#333333]'}`}>
                     {step.title}
                   </h4>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black px-3 py-1 rounded-full uppercase bg-slate-100 text-slate-500 tracking-wider">
-                      {step.estimatedTime}
+                      {step.estimated_time}
                     </span>
                     <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${
-                      step.riskLevel === 'Low' ? 'bg-green-100 text-green-700' :
-                      step.riskLevel === 'Medium' ? 'bg-[#75b0d3]/20 text-[#4c6fa1]' :
+                      step.risk_level === 'Low' ? 'bg-green-100 text-green-700' :
+                      step.risk_level === 'Medium' ? 'bg-[#75b0d3]/20 text-[#4c6fa1]' :
                       'bg-[#d94e6d]/10 text-[#d94e6d]'
                     }`}>
-                      {step.riskLevel} Risk
+                      {step.risk_level} Risk
                     </span>
                   </div>
                 </div>
                 <p className="text-sm text-slate-500 leading-relaxed font-medium">{step.description}</p>
-                
-                {!step.isCompleted && (
-                  <button className="mt-5 text-xs font-black text-[#d94e6d] hover:text-[#c03b57] flex items-center gap-2 group tracking-wider uppercase">
-                    View Actions 
+
+                {!step.is_completed && (
+                  <button
+                    onClick={() => onCompleteStep(step.id)}
+                    className="mt-5 text-xs font-black text-[#d94e6d] hover:text-[#c03b57] flex items-center gap-2 group tracking-wider uppercase"
+                  >
+                    Mark Complete
                     <span className="group-hover:translate-x-1 transition-transform">→</span>
                   </button>
                 )}
